@@ -1,0 +1,5 @@
+{
+  "name": "Brady Audit Suite",
+  "description": "A futuristic corporate audit tool for invoice splitting via AI and Excel reconciliation, featuring glassmorphism UI and Google Drive integration.",
+  "requestFramePermissions": []
+}

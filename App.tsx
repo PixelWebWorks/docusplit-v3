@@ -4,11 +4,15 @@ import Navigation from './components/Navigation.tsx';
 import SplitModule from './components/SplitModule.tsx';
 import ReconcileModule from './components/ReconcileModule.tsx';
 import SettingsModule from './components/SettingsModule.tsx';
-import { Layout, Lock, Key, ExternalLink, ChevronRight } from 'lucide-react';
+import { Layout, Lock, Key, ExternalLink, ChevronRight, Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentModule, setCurrentModule] = useState<Module>(Module.SPLIT);
-  const [isKeySelected, setIsKeySelected] = useState<boolean | null>(null);
+  // Inicializamos basado en localStorage para evitar parpadeos
+  const [isKeySelected, setIsKeySelected] = useState<boolean | null>(() => {
+    return localStorage.getItem('brady_key_verified') === 'true' ? true : null;
+  });
+  
   const [settings, setSettings] = useState<Settings>({
     driveClientId: localStorage.getItem('driveClientId') || '',
     driveFolderId: localStorage.getItem('driveFolderId') || '',
@@ -21,8 +25,11 @@ const App: React.FC = () => {
         // @ts-ignore
         const hasKey = await window.aistudio.hasSelectedApiKey();
         setIsKeySelected(hasKey);
+        if (hasKey) {
+          localStorage.setItem('brady_key_verified', 'true');
+        }
       } else {
-        // Fallback for development/standalone if not in specialized container
+        // Si no estamos en el entorno de AI Studio (desarrollo local), permitimos el paso
         setIsKeySelected(true);
       }
     };
@@ -34,8 +41,9 @@ const App: React.FC = () => {
     if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
       // @ts-ignore
       await window.aistudio.openSelectKey();
-      // Asumimos éxito según instrucciones para evitar race conditions
+      // REGLA: Asumir éxito inmediatamente para evitar condiciones de carrera
       setIsKeySelected(true);
+      localStorage.setItem('brady_key_verified', 'true');
     }
   };
 
@@ -44,6 +52,15 @@ const App: React.FC = () => {
     localStorage.setItem('driveClientId', newSettings.driveClientId);
     localStorage.setItem('driveFolderId', newSettings.driveFolderId);
   };
+
+  // Estado de carga inicial silencioso
+  if (isKeySelected === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#020b18]">
+        <Loader2 className="w-10 h-10 text-[#f84827] animate-spin" />
+      </div>
+    );
+  }
 
   if (isKeySelected === false) {
     return (
@@ -56,7 +73,7 @@ const App: React.FC = () => {
           <div className="space-y-2">
             <h1 className="text-3xl font-black text-white tracking-tight">PAID TIER REQUIRED</h1>
             <p className="text-slate-400 text-sm">
-              Para usar las funciones avanzadas de auditoría con <span className="text-white font-medium">Gemini 3 Pro</span>, debes seleccionar tu propia API Key de pago.
+              Para usar las funciones avanzadas con <span className="text-white font-medium">Gemini 3 Pro</span>, debes seleccionar tu propia API Key de pago.
             </p>
           </div>
 
@@ -67,7 +84,7 @@ const App: React.FC = () => {
             </p>
             <p className="flex items-start gap-2">
               <ChevronRight className="w-3 h-3 text-[#f84827] mt-0.5 flex-shrink-0" />
-              Mayor cuota de procesamiento de documentos.
+              Procesamiento de documentos a escala empresarial.
             </p>
             <a 
               href="https://ai.google.dev/gemini-api/docs/billing" 

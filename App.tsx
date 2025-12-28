@@ -8,10 +8,7 @@ import { Layout, Lock, Key, ExternalLink, ChevronRight, Loader2 } from 'lucide-r
 
 const App: React.FC = () => {
   const [currentModule, setCurrentModule] = useState<Module>(Module.SPLIT);
-  // Inicializamos basado en localStorage para evitar parpadeos
-  const [isKeySelected, setIsKeySelected] = useState<boolean | null>(() => {
-    return localStorage.getItem('brady_key_verified') === 'true' ? true : null;
-  });
+  const [isKeySelected, setIsKeySelected] = useState<boolean | null>(null);
   
   const [settings, setSettings] = useState<Settings>({
     driveClientId: localStorage.getItem('driveClientId') || '',
@@ -20,16 +17,23 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const checkApiKey = async () => {
+      // 1. PRIORIDAD: Si ya hay una API_KEY en el sistema (configurada en Coolify/VPS)
+      // No necesitamos mostrar el bloqueo de Paid Tier.
+      const envKey = process.env.API_KEY;
+      if (envKey && envKey.length > 10 && envKey !== "undefined") {
+        console.log("Acceso autorizado vía VPS Environment");
+        setIsKeySelected(true);
+        return;
+      }
+
+      // 2. FALLBACK: Verificar si estamos en un entorno con selector de claves (AI Studio)
       // @ts-ignore
       if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
         // @ts-ignore
         const hasKey = await window.aistudio.hasSelectedApiKey();
         setIsKeySelected(hasKey);
-        if (hasKey) {
-          localStorage.setItem('brady_key_verified', 'true');
-        }
       } else {
-        // Si no estamos en el entorno de AI Studio (desarrollo local), permitimos el paso
+        // 3. DESARROLLO: Si no hay key y no hay selector, permitimos entrar (el error saltará en la API)
         setIsKeySelected(true);
       }
     };
@@ -41,9 +45,7 @@ const App: React.FC = () => {
     if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
       // @ts-ignore
       await window.aistudio.openSelectKey();
-      // REGLA: Asumir éxito inmediatamente para evitar condiciones de carrera
       setIsKeySelected(true);
-      localStorage.setItem('brady_key_verified', 'true');
     }
   };
 
@@ -53,7 +55,6 @@ const App: React.FC = () => {
     localStorage.setItem('driveFolderId', newSettings.driveFolderId);
   };
 
-  // Estado de carga inicial silencioso
   if (isKeySelected === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#020b18]">
@@ -73,18 +74,17 @@ const App: React.FC = () => {
           <div className="space-y-2">
             <h1 className="text-3xl font-black text-white tracking-tight">PAID TIER REQUIRED</h1>
             <p className="text-slate-400 text-sm">
-              Para usar las funciones avanzadas con <span className="text-white font-medium">Gemini 3 Pro</span>, debes seleccionar tu propia API Key de pago.
+              Esta instancia requiere una API Key de pago para procesar documentos con <span className="text-white font-medium">Gemini 3 Pro</span>.
             </p>
           </div>
 
           <div className="p-4 bg-white/5 rounded-xl border border-white/5 text-left text-xs text-slate-500 space-y-3">
-            <p className="flex items-start gap-2">
+            <p className="flex items-start gap-2 text-slate-300">
               <ChevronRight className="w-3 h-3 text-[#f84827] mt-0.5 flex-shrink-0" />
               Acceso a modelos de alta precisión (Pro).
             </p>
-            <p className="flex items-start gap-2">
-              <ChevronRight className="w-3 h-3 text-[#f84827] mt-0.5 flex-shrink-0" />
-              Procesamiento de documentos a escala empresarial.
+            <p className="text-[10px] leading-relaxed">
+              Tip: Puedes evitar esta ventana configurando la variable <code className="text-[#f84827]">API_KEY</code> en tu panel de control de Coolify.
             </p>
             <a 
               href="https://ai.google.dev/gemini-api/docs/billing" 
@@ -100,7 +100,7 @@ const App: React.FC = () => {
             className="w-full py-4 bg-[#f84827] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-[#f84827]/30"
           >
             <Key className="w-5 h-5" />
-            Seleccionar API Key
+            Seleccionar API Key Personal
           </button>
         </div>
       </div>

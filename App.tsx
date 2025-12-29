@@ -17,25 +17,26 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const checkApiKey = async () => {
-      // 1. Verificación vía Environment Variable (Inyectada por Vite desde VITE_API_KEY)
+      // 1. Verificación vía Variable de Entorno inyectada por Vite
       try {
         const envKey = process.env.API_KEY;
-        if (envKey && envKey.length > 10) {
+        if (envKey && envKey.length > 5) {
+          console.log("App: Acceso autorizado vía Variable de Entorno.");
           setIsKeySelected(true);
           return;
         }
       } catch (e) {
-        console.warn("process.env.API_KEY no disponible, intentando AI Studio...");
+        console.warn("App: process.env.API_KEY no detectado.");
       }
 
-      // 2. Fallback para AI Studio
+      // 2. Fallback para entorno de AI Studio
       // @ts-ignore
       if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
         // @ts-ignore
         const hasKey = await window.aistudio.hasSelectedApiKey();
         setIsKeySelected(hasKey);
       } else {
-        // En desarrollo o sin llave seleccionada, permitimos que la app cargue
+        // En desarrollo local o si no hay AI Studio, permitimos el paso para que el usuario configure
         setIsKeySelected(true);
       }
     };

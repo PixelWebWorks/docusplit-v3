@@ -8,13 +8,8 @@ export const analyzeInvoicePage = async (
   retries = 3, 
   onRetry?: (attempt: number) => void
 ): Promise<InvoiceMetadata> => {
-  // Obtenemos la clave inyectada por el build step de Vite
-  let apiKey = "";
-  try {
-    apiKey = process.env.API_KEY || "";
-  } catch (e) {
-    apiKey = "";
-  }
+  // En Vite, las variables de entorno se acceden vía import.meta.env
+  const apiKey = import.meta.env.VITE_API_KEY || "";
 
   const ai = new GoogleGenAI({ apiKey });
   

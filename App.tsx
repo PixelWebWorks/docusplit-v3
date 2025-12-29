@@ -17,29 +17,24 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const checkApiKey = async () => {
-      // 1. PRIORIDAD: Clave inyectada por Vite desde el entorno (Coolify/VPS)
-      try {
-        // En Vite, esto será reemplazado por el valor real o un string vacío
-        const envKey = process.env.API_KEY;
-        
-        if (envKey && envKey.length > 10) {
-          console.log("Acceso autorizado vía VPS Environment");
-          setIsKeySelected(true);
-          return;
-        }
-      } catch (e) {
-        // Si falla el acceso a process.env, continuamos al fallback
-        console.log("No process.env found, checking AI Studio...");
+      // 1. Verificación en el entorno de Vite (Coolify/VPS)
+      // Usamos import.meta.env que es el estándar de Vite para el navegador
+      const vpsKey = import.meta.env.VITE_API_KEY;
+      
+      if (vpsKey && vpsKey.length > 10) {
+        console.log("API Key detectada desde entorno VPS");
+        setIsKeySelected(true);
+        return;
       }
 
-      // 2. FALLBACK: Entorno de AI Studio
+      // 2. Fallback para entorno de desarrollo local o AI Studio
       // @ts-ignore
       if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
         // @ts-ignore
         const hasKey = await window.aistudio.hasSelectedApiKey();
         setIsKeySelected(hasKey);
       } else {
-        // 3. DESARROLLO / SIN LLAVE
+        // Por defecto permitimos el paso, el servicio de Gemini manejará el error si no hay key
         setIsKeySelected(true);
       }
     };
@@ -65,50 +60,6 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#020b18]">
         <Loader2 className="w-10 h-10 text-[#f84827] animate-spin" />
-      </div>
-    );
-  }
-
-  if (isKeySelected === false) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-[#020b18]">
-        <div className="max-w-md w-full glass p-10 rounded-3xl border border-white/10 text-center space-y-8 animate-in zoom-in duration-500">
-          <div className="mx-auto w-20 h-20 bg-[#f84827]/10 rounded-full flex items-center justify-center border border-[#f84827]/20 shadow-[0_0_30px_rgba(248,72,39,0.2)]">
-            <Lock className="w-10 h-10 text-[#f84827]" />
-          </div>
-          
-          <div className="space-y-2">
-            <h1 className="text-3xl font-black text-white tracking-tight">PAID TIER REQUIRED</h1>
-            <p className="text-slate-400 text-sm">
-              Esta instancia requiere una API Key de pago para procesar documentos con <span className="text-white font-medium">Gemini 3 Pro</span>.
-            </p>
-          </div>
-
-          <div className="p-4 bg-white/5 rounded-xl border border-white/5 text-left text-xs text-slate-500 space-y-3">
-            <p className="flex items-start gap-2 text-slate-300">
-              <ChevronRight className="w-3 h-3 text-[#f84827] mt-0.5 flex-shrink-0" />
-              Acceso a modelos de alta precisión (Pro).
-            </p>
-            <p className="text-[10px] leading-relaxed">
-              Tip: Configura <code className="text-[#f84827]">VITE_API_KEY</code> en tu panel de Coolify para acceso automático.
-            </p>
-            <a 
-              href="https://ai.google.dev/gemini-api/docs/billing" 
-              target="_blank" 
-              className="flex items-center gap-1 text-[#f84827] hover:underline font-bold mt-2"
-            >
-              Documentación de Facturación <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-
-          <button
-            onClick={handleSelectKey}
-            className="w-full py-4 bg-[#f84827] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-[#f84827]/30"
-          >
-            <Key className="w-5 h-5" />
-            Seleccionar API Key Personal
-          </button>
-        </div>
       </div>
     );
   }

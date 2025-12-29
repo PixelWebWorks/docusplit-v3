@@ -8,13 +8,20 @@ export const analyzeInvoicePage = async (
   retries = 3, 
   onRetry?: (attempt: number) => void
 ): Promise<InvoiceMetadata> => {
-  // Siempre crear nueva instancia para usar la clave más reciente inyectada
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  // Obtenemos la clave inyectada por el build step de Vite
+  let apiKey = "";
+  try {
+    apiKey = process.env.API_KEY || "";
+  } catch (e) {
+    apiKey = "";
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', // Modelo Pro para Paid Tier
+        model: 'gemini-3-pro-preview',
         contents: {
           parts: [
             {
@@ -30,7 +37,6 @@ export const analyzeInvoicePage = async (
         },
         config: {
           responseMimeType: "application/json",
-          // El Thinking Budget permite al modelo razonar la estructura del documento
           thinkingConfig: { thinkingBudget: 4000 },
         },
       });
@@ -38,14 +44,8 @@ export const analyzeInvoicePage = async (
       const resultText = response.text || "{}";
       return JSON.parse(resultText) as InvoiceMetadata;
     } catch (e: any) {
-      const isRateLimit = e.message?.includes('429') || e.status === 429 || JSON.stringify(e).includes('429');
-      const isNotFound = e.message?.includes('Requested entity was not found');
+      const isRateLimit = e.message?.includes('429') || e.status === 429;
       
-      // Si la clave es inválida o no se encuentra (posible error de permisos), notificamos
-      if (isNotFound) {
-        console.error("API Key error. Re-triggering selection might be needed.");
-      }
-
       if (isRateLimit && attempt < retries - 1) {
         const waitTime = Math.pow(2, attempt) * 2000;
         if (onRetry) onRetry(attempt + 1);

@@ -17,23 +17,29 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const checkApiKey = async () => {
-      // 1. PRIORIDAD: Si ya hay una API_KEY en el sistema (configurada en Coolify/VPS)
-      // No necesitamos mostrar el bloqueo de Paid Tier.
-      const envKey = process.env.API_KEY;
-      if (envKey && envKey.length > 10 && envKey !== "undefined") {
-        console.log("Acceso autorizado vía VPS Environment");
-        setIsKeySelected(true);
-        return;
+      // 1. PRIORIDAD: Clave inyectada por Vite desde el entorno (Coolify/VPS)
+      try {
+        // En Vite, esto será reemplazado por el valor real o un string vacío
+        const envKey = process.env.API_KEY;
+        
+        if (envKey && envKey.length > 10) {
+          console.log("Acceso autorizado vía VPS Environment");
+          setIsKeySelected(true);
+          return;
+        }
+      } catch (e) {
+        // Si falla el acceso a process.env, continuamos al fallback
+        console.log("No process.env found, checking AI Studio...");
       }
 
-      // 2. FALLBACK: Verificar si estamos en un entorno con selector de claves (AI Studio)
+      // 2. FALLBACK: Entorno de AI Studio
       // @ts-ignore
       if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
         // @ts-ignore
         const hasKey = await window.aistudio.hasSelectedApiKey();
         setIsKeySelected(hasKey);
       } else {
-        // 3. DESARROLLO: Si no hay key y no hay selector, permitimos entrar (el error saltará en la API)
+        // 3. DESARROLLO / SIN LLAVE
         setIsKeySelected(true);
       }
     };
@@ -84,7 +90,7 @@ const App: React.FC = () => {
               Acceso a modelos de alta precisión (Pro).
             </p>
             <p className="text-[10px] leading-relaxed">
-              Tip: Puedes evitar esta ventana configurando la variable <code className="text-[#f84827]">API_KEY</code> en tu panel de control de Coolify.
+              Tip: Configura <code className="text-[#f84827]">VITE_API_KEY</code> en tu panel de Coolify para acceso automático.
             </p>
             <a 
               href="https://ai.google.dev/gemini-api/docs/billing" 

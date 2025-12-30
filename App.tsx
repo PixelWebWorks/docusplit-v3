@@ -9,7 +9,6 @@ import { Layout, Loader2 } from 'lucide-react';
 const App: React.FC = () => {
   const [currentModule, setCurrentModule] = useState<Module>(Module.SPLIT);
   const [isKeySelected, setIsKeySelected] = useState<boolean | null>(null);
-  const [resetKey, setResetKey] = useState(0);
   
   // Prioritize environment variables (VPS) -> LocalStorage -> Empty
   const [settings] = useState<Settings>({
@@ -42,9 +41,8 @@ const App: React.FC = () => {
   }, []);
 
   const handleReset = () => {
-    if (confirm("Are you sure you want to start a new process? Current results will be lost.")) {
-      setResetKey(prev => prev + 1);
-      setCurrentModule(Module.SPLIT);
+    if (confirm("Are you sure you want to start a new process? All unsaved current results will be lost.")) {
+      window.location.reload();
     }
   };
 
@@ -59,11 +57,11 @@ const App: React.FC = () => {
   const renderModule = () => {
     switch (currentModule) {
       case Module.SPLIT:
-        return <SplitModule key={`split-${resetKey}`} settings={settings} />;
+        return <SplitModule settings={settings} />;
       case Module.RECONCILE:
-        return <ReconcileModule key={`reconcile-${resetKey}`} />;
+        return <ReconcileModule />;
       default:
-        return <SplitModule key={`split-${resetKey}`} settings={settings} />;
+        return <SplitModule settings={settings} />;
     }
   };
 

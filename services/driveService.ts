@@ -1,4 +1,3 @@
-
 interface DriveUploadParams {
   accessToken: string;
   name: string;
@@ -9,19 +8,31 @@ interface DriveUploadParams {
 export const initDriveAuth = (clientId: string): Promise<string> => {
   return new Promise((resolve, reject) => {
     // @ts-ignore
-    if (!google?.accounts?.oauth2) {
-      return reject(new Error("Google Identity Services not loaded"));
+    if (typeof google === 'undefined' || !google?.accounts?.oauth2) {
+      return reject(new Error("La API de Google no se ha cargado. Verifique su conexión o bloqueadores de anuncios."));
     }
-    // @ts-ignore
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: 'https://www.googleapis.com/auth/drive.file',
-      callback: (response: any) => {
-        if (response.error) reject(response);
-        resolve(response.access_token);
-      },
-    });
-    client.requestAccessToken();
+    
+    try {
+      // @ts-ignore
+      const client = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: (response: any) => {
+          if (response.error) {
+            console.error("Google Auth Error:", response);
+            return reject(new Error(`Error de autenticación: ${response.error_description || response.error}`));
+          }
+          resolve(response.access_token);
+        },
+        error_callback: (err: any) => {
+          console.error("Google Auth Client Error:", err);
+          reject(new Error("No se pudo abrir el diálogo de autenticación."));
+        }
+      });
+      client.requestAccessToken();
+    } catch (e: any) {
+      reject(new Error(`Fallo crítico en OAuth: ${e.message}`));
+    }
   });
 };
 
@@ -38,7 +49,12 @@ export const findFolderByName = async (accessToken: string, folderName: string, 
     headers: { Authorization: `Bearer ${accessToken}` }
   });
 
-  if (!response.ok) return null;
+  if (!response.ok) {
+    const error = await response.json();
+    console.error("Drive Search Error:", error);
+    return null;
+  }
+  
   const data = await response.json();
   return data.files && data.files.length > 0 ? data.files[0].id : null;
 };
@@ -61,6 +77,10 @@ export const createFolder = async (accessToken: string, folderName: string, pare
     },
     body: JSON.stringify(metadata)
   });
+
+  if (!response.ok) {
+    throw new Error("No se pudo crear la subcarpeta en Drive.");
+  }
 
   const data = await response.json();
   return data.id;
@@ -87,7 +107,7 @@ export const uploadToDrive = async ({ accessToken, name, blob, parentId }: Drive
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Drive upload error: ${errorText}`);
+    throw new Error(`Error al subir archivo a Drive: ${errorText}`);
   }
 
   return await response.json();

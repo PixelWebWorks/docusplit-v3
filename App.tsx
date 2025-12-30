@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Module, Settings } from './types';
 import Navigation from './components/Navigation';
@@ -10,9 +11,10 @@ const App: React.FC = () => {
   const [currentModule, setCurrentModule] = useState<Module>(Module.SPLIT);
   const [isKeySelected, setIsKeySelected] = useState<boolean | null>(null);
   
+  // Priorizar variables de entorno (VPS) -> LocalStorage -> Vacío
   const [settings, setSettings] = useState<Settings>({
-    driveClientId: localStorage.getItem('driveClientId') || '',
-    driveFolderId: localStorage.getItem('driveFolderId') || '',
+    driveClientId: (process.env as any).DRIVE_CLIENT_ID || localStorage.getItem('driveClientId') || '',
+    driveFolderId: (process.env as any).DRIVE_FOLDER_ID || localStorage.getItem('driveFolderId') || '',
   });
 
   useEffect(() => {

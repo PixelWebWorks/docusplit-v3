@@ -16,7 +16,9 @@ export default defineConfig(({ mode }) => {
       sourcemap: false
     },
     define: {
-      'process.env.API_KEY': JSON.stringify(env.VITE_API_KEY || env.API_KEY || "")
+      'process.env.API_KEY': JSON.stringify(env.VITE_API_KEY || env.API_KEY || ""),
+      'process.env.DRIVE_CLIENT_ID': JSON.stringify(env.VITE_DRIVE_CLIENT_ID || env.DRIVE_CLIENT_ID || ""),
+      'process.env.DRIVE_FOLDER_ID': JSON.stringify(env.VITE_DRIVE_FOLDER_ID || env.DRIVE_FOLDER_ID || "")
     }
   };
 });

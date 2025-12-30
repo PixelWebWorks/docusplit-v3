@@ -4,7 +4,6 @@ import { Module, Settings } from './types';
 import Navigation from './components/Navigation';
 import SplitModule from './components/SplitModule';
 import ReconcileModule from './components/ReconcileModule';
-import SettingsModule from './components/SettingsModule';
 import { Layout, Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -12,8 +11,8 @@ const App: React.FC = () => {
   const [isKeySelected, setIsKeySelected] = useState<boolean | null>(null);
   const [resetKey, setResetKey] = useState(0);
   
-  // Priorizar variables de entorno (VPS) -> LocalStorage -> Vacío
-  const [settings, setSettings] = useState<Settings>({
+  // Prioritize environment variables (VPS) -> LocalStorage -> Empty
+  const [settings] = useState<Settings>({
     driveClientId: (process.env as any).DRIVE_CLIENT_ID || localStorage.getItem('driveClientId') || '',
     driveFolderId: (process.env as any).DRIVE_FOLDER_ID || localStorage.getItem('driveFolderId') || '',
   });
@@ -27,7 +26,7 @@ const App: React.FC = () => {
           return;
         }
       } catch (e) {
-        console.warn("App: API_KEY no detectado en process.env");
+        console.warn("App: API_KEY not detected in process.env");
       }
 
       // @ts-ignore
@@ -42,26 +41,11 @@ const App: React.FC = () => {
     checkApiKey();
   }, []);
 
-  const handleSelectKey = async () => {
-    // @ts-ignore
-    if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
-      // @ts-ignore
-      await window.aistudio.openSelectKey();
-      setIsKeySelected(true);
-    }
-  };
-
   const handleReset = () => {
-    if (confirm("¿Estás seguro de que quieres empezar un nuevo proceso? Se perderán los resultados actuales.")) {
+    if (confirm("Are you sure you want to start a new process? Current results will be lost.")) {
       setResetKey(prev => prev + 1);
       setCurrentModule(Module.SPLIT);
     }
-  };
-
-  const saveSettings = (newSettings: Settings) => {
-    setSettings(newSettings);
-    localStorage.setItem('driveClientId', newSettings.driveClientId);
-    localStorage.setItem('driveFolderId', newSettings.driveFolderId);
   };
 
   if (isKeySelected === null) {
@@ -78,9 +62,6 @@ const App: React.FC = () => {
         return <SplitModule key={`split-${resetKey}`} settings={settings} />;
       case Module.RECONCILE:
         return <ReconcileModule key={`reconcile-${resetKey}`} />;
-      case Module.SETTINGS:
-        // Mantener accesible solo por lógica interna si fuera necesario
-        return <SettingsModule settings={settings} onSave={saveSettings} onKeyChange={handleSelectKey} />;
       default:
         return <SplitModule key={`split-${resetKey}`} settings={settings} />;
     }
@@ -110,7 +91,7 @@ const App: React.FC = () => {
       </main>
 
       <footer className="p-6 text-center text-slate-500 text-xs mt-auto border-t border-white/5">
-        <div>&copy; {new Date().getFullYear()} Brady Audit Suite. Gestión Logística Automatizada.</div>
+        <div>&copy; {new Date().getFullYear()} Brady Audit Suite. Automated Logistics Management.</div>
       </footer>
     </div>
   );

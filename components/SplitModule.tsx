@@ -41,7 +41,7 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
     if (!file) return;
     setIsProcessing(true);
     setProgress(0);
-    setStatus('Iniciando escaneo...');
+    setStatus('Starting scan...');
     setResultFiles([]);
     
     try {
@@ -53,11 +53,11 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
       let currentGroup: { id: string; shipTo: string; pages: number[] } | null = null;
 
       for (let i = 1; i <= totalPages; i++) {
-        setStatus(`Analizando página ${i} de ${totalPages}...`);
+        setStatus(`Analyzing page ${i} of ${totalPages}...`);
         const img = await renderPageToImage(pdf, i);
         
         const metadata = await analyzeInvoicePage(img, 3, (attempt) => {
-          setStatus(`Cuota agotada. Reintento ${attempt} para pág. ${i}...`);
+          setStatus(`Quota reached. Retry ${attempt} for page ${i}...`);
         });
         
         const invoiceNo = metadata.invoiceNo || 'N-A';
@@ -80,7 +80,7 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
         }
       }
 
-      setStatus('Generando archivos individuales...');
+      setStatus('Generating individual files...');
       const blobs = await splitPdfIntoGroups(file, invoiceGroups.map(g => g.pages));
       const results = blobs.map((blob, idx) => {
         const group = invoiceGroups[idx];
@@ -93,7 +93,7 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
       });
       
       setResultFiles(results);
-      setStatus('Proceso de división listo.');
+      setStatus('Split process ready.');
     } catch (error: any) {
       console.error(error);
       setStatus(`Error: ${error.message}`);
@@ -122,10 +122,10 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
   };
 
   const uploadToGoogleDrive = async () => {
-    if (!settings.driveClientId) return alert("Error de configuración: Drive Client ID no encontrado.");
+    if (!settings.driveClientId) return alert("Configuration error: Drive Client ID not found.");
     
     try {
-      setStatus('Solicitando acceso a Google Drive...');
+      setStatus('Requesting Google Drive access...');
       const token = await initDriveAuth(settings.driveClientId);
       setIsProcessing(true);
       const folderCache: Record<string, string> = {};
@@ -144,7 +144,7 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
         }
         targetFolderId = folderCache[clientName];
 
-        setStatus(`Subiendo factura ${f.invoiceNo} (${++uploadedCount}/${resultFiles.length})...`);
+        setStatus(`Uploading invoice ${f.invoiceNo} (${++uploadedCount}/${resultFiles.length})...`);
         await uploadToDrive({
           accessToken: token,
           name: f.name,
@@ -152,10 +152,10 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
           parentId: targetFolderId || undefined
         });
       }
-      setStatus('¡Éxito! Drive actualizado.');
+      setStatus('Success! Drive updated.');
     } catch (err: any) {
       console.error(err);
-      setStatus(`Error en subida: ${err.message}`);
+      setStatus(`Upload error: ${err.message}`);
     } finally {
       setIsProcessing(false);
     }
@@ -163,24 +163,23 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
 
   return (
     <div className="space-y-6">
-      {/* Indicador de configuración activa de Coolify */}
       {settings.driveClientId && (
         <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-full w-fit mx-auto md:mx-0">
           <ShieldCheck className="w-3 h-3 text-green-400" />
-          <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest">Configuración Activa (Coolify)</span>
+          <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest">Active Configuration (Coolify)</span>
         </div>
       )}
 
       <section className="glass p-8 rounded-2xl border border-white/10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-white">
           <Upload className="text-[#f84827]" />
-          Splitter Inteligente
+          Intelligent Splitter
         </h2>
         <div className="flex flex-col md:flex-row items-center gap-4">
           <label className="flex-1 w-full h-32 border-2 border-dashed border-white/20 rounded-xl hover:border-[#f84827]/50 transition-colors flex flex-col items-center justify-center cursor-pointer bg-white/5">
             <input type="file" accept="application/pdf" className="hidden" onChange={handleFileChange} />
             <FileText className="w-8 h-8 text-slate-500 mb-2" />
-            <span className="text-sm font-medium">{file ? file.name : "Seleccionar PDF Maestro"}</span>
+            <span className="text-sm font-medium">{file ? file.name : "Select Master PDF"}</span>
           </label>
           <button
             onClick={processFile}
@@ -188,7 +187,7 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
             className="w-full md:w-auto h-32 px-12 rounded-xl font-bold bg-[#f84827] text-white flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
           >
             {isProcessing ? <Loader2 className="w-8 h-8 animate-spin" /> : <Scissors className="w-8 h-8 mb-2" />}
-            {isProcessing ? "Procesando..." : "Iniciar Split"}
+            {isProcessing ? "Processing..." : "Start Split"}
           </button>
         </div>
 
@@ -196,7 +195,7 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
           <div className="mt-8 space-y-2">
             <div className="flex justify-between text-xs text-[#f84827]">
               <span className="flex items-center gap-2">
-                {status.includes('Cuota') && <Clock className="w-3 h-3 animate-pulse" />}
+                {status.includes('Quota') && <Clock className="w-3 h-3 animate-pulse" />}
                 {status}
               </span>
               <span>{progress}%</span>
@@ -213,7 +212,7 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
           <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
             <div>
               <h3 className="text-xl font-bold">Audit List</h3>
-              <p className="text-slate-400">{resultFiles.length} facturas separadas.</p>
+              <p className="text-slate-400">{resultFiles.length} invoices split.</p>
             </div>
             <div className="flex gap-2">
               <button 
@@ -221,14 +220,14 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
                 className="flex items-center gap-2 px-6 py-3 bg-white/10 rounded-lg font-bold hover:bg-white/20 transition-all border border-white/10"
               >
                 <Archive className="w-4 h-4" />
-                Descargar ZIP
+                Download ZIP
               </button>
               <button 
                 onClick={uploadToGoogleDrive}
                 className="flex items-center gap-2 px-8 py-3 bg-[#f84827] rounded-lg font-bold hover:scale-105 transition-all shadow-lg shadow-[#f84827]/20"
               >
                 <Cloud className="w-4 h-4" />
-                Subir a Drive
+                Upload to Drive
               </button>
             </div>
           </div>
@@ -237,9 +236,9 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-900 sticky top-0">
                 <tr>
-                  <th className="p-4 font-bold">Cliente / Archivo</th>
-                  <th className="p-4 font-bold text-right">Tamaño</th>
-                  <th className="p-4 font-bold text-center">Acción</th>
+                  <th className="p-4 font-bold">Client / File</th>
+                  <th className="p-4 font-bold text-right">Size</th>
+                  <th className="p-4 font-bold text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -261,7 +260,7 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
                           URL.revokeObjectURL(url);
                         }}
                         className="p-2 hover:bg-[#f84827]/10 rounded-lg text-[#f84827] transition-colors"
-                        title="Descargar individual"
+                        title="Download individual"
                       >
                         <Download className="w-4 h-4" />
                       </button>

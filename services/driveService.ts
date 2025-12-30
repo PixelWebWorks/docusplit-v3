@@ -1,3 +1,4 @@
+
 interface DriveUploadParams {
   accessToken: string;
   name: string;
@@ -9,7 +10,7 @@ export const initDriveAuth = (clientId: string): Promise<string> => {
   return new Promise((resolve, reject) => {
     // @ts-ignore
     if (typeof google === 'undefined' || !google?.accounts?.oauth2) {
-      return reject(new Error("La API de Google no se ha cargado. Verifique su conexión o bloqueadores de anuncios."));
+      return reject(new Error("Google API not loaded. Check your connection or ad-blockers."));
     }
     
     try {
@@ -20,24 +21,24 @@ export const initDriveAuth = (clientId: string): Promise<string> => {
         callback: (response: any) => {
           if (response.error) {
             console.error("Google Auth Error:", response);
-            return reject(new Error(`Error de autenticación: ${response.error_description || response.error}`));
+            return reject(new Error(`Authentication error: ${response.error_description || response.error}`));
           }
           resolve(response.access_token);
         },
         error_callback: (err: any) => {
           console.error("Google Auth Client Error:", err);
-          reject(new Error("No se pudo abrir el diálogo de autenticación."));
+          reject(new Error("Could not open authentication dialog."));
         }
       });
       client.requestAccessToken();
     } catch (e: any) {
-      reject(new Error(`Fallo crítico en OAuth: ${e.message}`));
+      reject(new Error(`OAuth critical failure: ${e.message}`));
     }
   });
 };
 
 /**
- * Búsqueda de carpeta por nombre dentro de un directorio padre.
+ * Find folder by name within a parent directory.
  */
 export const findFolderByName = async (accessToken: string, folderName: string, parentId?: string): Promise<string | null> => {
   let query = `name = '${folderName.replace(/'/g, "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
@@ -60,7 +61,7 @@ export const findFolderByName = async (accessToken: string, folderName: string, 
 };
 
 /**
- * Creación de carpeta nueva.
+ * Create a new folder.
  */
 export const createFolder = async (accessToken: string, folderName: string, parentId?: string): Promise<string> => {
   const metadata = {
@@ -79,7 +80,7 @@ export const createFolder = async (accessToken: string, folderName: string, pare
   });
 
   if (!response.ok) {
-    throw new Error("No se pudo crear la subcarpeta en Drive.");
+    throw new Error("Could not create subfolder on Google Drive.");
   }
 
   const data = await response.json();
@@ -107,7 +108,7 @@ export const uploadToDrive = async ({ accessToken, name, blob, parentId }: Drive
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Error al subir archivo a Drive: ${errorText}`);
+    throw new Error(`Google Drive upload error: ${errorText}`);
   }
 
   return await response.json();

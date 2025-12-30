@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { FileSearch, FileSpreadsheet, FileText, Loader2, CheckCircle } from 'lucide-react';
 import { renderPageToImage } from '../services/pdfService';
@@ -21,7 +22,7 @@ const ReconcileModule: React.FC = () => {
     if (!pdfFile || !excelFile) return;
     setIsProcessing(true);
     setHasRun(false);
-    setStatus('Leyendo Excel...');
+    setStatus('Reading Excel...');
 
     try {
       const excelBuffer = await excelFile.arrayBuffer();
@@ -35,13 +36,13 @@ const ReconcileModule: React.FC = () => {
         if (key && row[key]) excelIds.add(String(row[key]).trim());
       });
 
-      setStatus('Escaneando PDF...');
+      setStatus('Scanning PDF...');
       const pdfBuffer = await pdfFile.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: pdfBuffer }).promise;
       const pdfIds = new Set<string>();
 
       for (let i = 1; i <= pdf.numPages; i++) {
-        setStatus(`Página ${i}/${pdf.numPages}...`);
+        setStatus(`Page ${i}/${pdf.numPages}...`);
         const img = await renderPageToImage(pdf, i);
         const metadata = await analyzeInvoicePage(img);
         if (metadata.invoiceNo) pdfIds.add(metadata.invoiceNo.trim());
@@ -53,7 +54,7 @@ const ReconcileModule: React.FC = () => {
 
       setDiscrepancies(results);
       setHasRun(true);
-      setStatus('Audit completado.');
+      setStatus('Audit completed.');
     } catch (err: any) {
       setStatus(`Error: ${err.message}`);
     } finally {
@@ -64,17 +65,17 @@ const ReconcileModule: React.FC = () => {
   return (
     <div className="space-y-6">
       <section className="glass p-8 rounded-2xl border border-white/10">
-        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-white"><FileSearch className="text-[#f84827]" /> Conciliación Audit</h2>
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-white"><FileSearch className="text-[#f84827]" /> Reconciliation Audit</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <label className="h-24 border-2 border-dashed border-white/10 rounded-xl flex items-center gap-4 px-6 cursor-pointer hover:bg-white/5">
             <input type="file" accept=".pdf" className="hidden" onChange={e => e.target.files && setPdfFile(e.target.files[0])} />
             <FileText className={pdfFile ? 'text-green-500' : 'text-slate-600'} />
-            <span className="truncate">{pdfFile ? pdfFile.name : 'Subir PDF'}</span>
+            <span className="truncate">{pdfFile ? pdfFile.name : 'Upload PDF'}</span>
           </label>
           <label className="h-24 border-2 border-dashed border-white/10 rounded-xl flex items-center gap-4 px-6 cursor-pointer hover:bg-white/5">
             <input type="file" accept=".xlsx" className="hidden" onChange={e => e.target.files && setExcelFile(e.target.files[0])} />
             <FileSpreadsheet className={excelFile ? 'text-[#f84827]' : 'text-slate-600'} />
-            <span className="truncate">{excelFile ? excelFile.name : 'Subir Excel Log'}</span>
+            <span className="truncate">{excelFile ? excelFile.name : 'Upload Excel Log'}</span>
           </label>
         </div>
         <button onClick={processReconciliation} disabled={!pdfFile || !excelFile || isProcessing} className="w-full py-4 rounded-xl font-bold bg-[#f84827] text-white flex items-center justify-center gap-2 hover:opacity-90 transition-all">
@@ -85,12 +86,12 @@ const ReconcileModule: React.FC = () => {
       {hasRun && (
         <section className="glass p-8 rounded-2xl animate-in fade-in">
           {discrepancies.length === 0 ? (
-            <div className="text-center p-8 text-green-400 font-bold"><CheckCircle className="mx-auto mb-2" /> ¡Sin discrepancias!</div>
+            <div className="text-center p-8 text-green-400 font-bold"><CheckCircle className="mx-auto mb-2" /> No discrepancies found!</div>
           ) : (
             <div className="overflow-hidden rounded-xl border border-white/5">
               <table className="w-full text-sm text-left">
                 <thead className="bg-slate-900">
-                  <tr><th className="p-4">Invoice ID</th><th className="p-4">Estado</th></tr>
+                  <tr><th className="p-4">Invoice ID</th><th className="p-4">Status</th></tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {discrepancies.map((d, i) => (

@@ -45,7 +45,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentModule, setModule, onRes
         className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#f84827]/30 text-[#f84827] hover:bg-[#f84827] hover:text-white transition-all duration-300 text-sm font-bold shadow-lg shadow-[#f84827]/5 group"
       >
         <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-        <span className="hidden md:inline">Nuevo Proceso</span>
+        <span className="hidden md:inline">Start New Process</span>
       </button>
     </nav>
   );

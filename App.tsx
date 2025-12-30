@@ -10,7 +10,7 @@ const App: React.FC = () => {
   const [currentModule, setCurrentModule] = useState<Module>(Module.SPLIT);
   const [isKeySelected, setIsKeySelected] = useState<boolean | null>(null);
   
-  // Prioritize environment variables (VPS) -> LocalStorage -> Empty
+  // Settings injected from environment variables (Coolify)
   const [settings] = useState<Settings>({
     driveClientId: (process.env as any).DRIVE_CLIENT_ID || localStorage.getItem('driveClientId') || '',
     driveFolderId: (process.env as any).DRIVE_FOLDER_ID || localStorage.getItem('driveFolderId') || '',
@@ -41,9 +41,8 @@ const App: React.FC = () => {
   }, []);
 
   const handleReset = () => {
-    if (confirm("Are you sure you want to start a new process? All unsaved current results will be lost.")) {
-      window.location.reload();
-    }
+    // Immediate full page reload to clear all states and memory
+    window.location.href = window.location.pathname + window.location.search;
   };
 
   if (isKeySelected === null) {

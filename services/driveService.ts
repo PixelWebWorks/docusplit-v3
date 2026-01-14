@@ -12,7 +12,15 @@ export const initDriveAuth = (clientId: string): Promise<string> => {
     if (typeof google === 'undefined' || !google?.accounts?.oauth2) {
       return reject(new Error("Google API not loaded. Check your connection or ad-blockers."));
     }
-    
+
+    // Check sessionStorage for cached token
+    const cachedToken = sessionStorage.getItem('google_access_token');
+    const tokenExpiry = sessionStorage.getItem('google_token_expiry');
+
+    if (cachedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry)) {
+      return resolve(cachedToken);
+    }
+
     try {
       // @ts-ignore
       const client = google.accounts.oauth2.initTokenClient({
@@ -23,6 +31,12 @@ export const initDriveAuth = (clientId: string): Promise<string> => {
             console.error("Google Auth Error:", response);
             return reject(new Error(`Authentication error: ${response.error_description || response.error}`));
           }
+
+          // Cache token for ~58 minutes (safety margin for 1 hour token)
+          const expiresIn = 3500 * 1000;
+          sessionStorage.setItem('google_access_token', response.access_token);
+          sessionStorage.setItem('google_token_expiry', (Date.now() + expiresIn).toString());
+
           resolve(response.access_token);
         },
         error_callback: (err: any) => {
@@ -55,7 +69,7 @@ export const findFolderByName = async (accessToken: string, folderName: string, 
     console.error("Drive Search Error:", error);
     return null;
   }
-  
+
   const data = await response.json();
   return data.files && data.files.length > 0 ? data.files[0].id : null;
 };

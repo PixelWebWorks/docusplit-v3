@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Upload, FileText, Cloud, Loader2, AlertCircle, Scissors, Download, Archive, Clock, ShieldCheck } from 'lucide-react';
+import { Upload, FileText, Cloud, Loader2, AlertCircle, Scissors, Download, Archive, Clock, ShieldCheck, Check } from 'lucide-react';
 import { analyzeInvoicePage } from '../services/gemini';
 import { renderPageToImage, splitPdfIntoGroups } from '../services/pdfService';
 import { initDriveAuth, uploadToDrive, findFolderByName, createFolder } from '../services/driveService';
@@ -28,6 +28,7 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('');
   const [resultFiles, setResultFiles] = useState<ResultFile[]>([]);
+  const [isUploaded, setIsUploaded] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -43,23 +44,24 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
     setProgress(0);
     setStatus('Starting scan...');
     setResultFiles([]);
-    
+    setIsUploaded(false);
+
     try {
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const totalPages = pdf.numPages;
-      
+
       const invoiceGroups: { id: string; shipTo: string; pages: number[] }[] = [];
       let currentGroup: { id: string; shipTo: string; pages: number[] } | null = null;
 
       for (let i = 1; i <= totalPages; i++) {
         setStatus(`Analyzing page ${i} of ${totalPages}...`);
         const img = await renderPageToImage(pdf, i);
-        
+
         const metadata = await analyzeInvoicePage(img, 3, (attempt) => {
           setStatus(`Quota reached. Retry ${attempt} for page ${i}...`);
         });
-        
+
         const invoiceNo = metadata.invoiceNo || 'N-A';
         const shipTo = metadata.shipTo || 'Unknown_Client';
 
@@ -72,9 +74,9 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
           currentGroup = { id: invoiceNo, shipTo: shipTo, pages: [i] };
           invoiceGroups.push(currentGroup);
         }
-        
+
         setProgress(Math.round((i / totalPages) * 100));
-        
+
         if (i < totalPages) {
           await new Promise(resolve => setTimeout(resolve, 800));
         }
@@ -91,7 +93,7 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
           invoiceNo: group.id
         };
       });
-      
+
       setResultFiles(results);
       setStatus('Split process ready.');
     } catch (error: any) {
@@ -104,12 +106,12 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
 
   const downloadAsZip = async () => {
     if (resultFiles.length === 0) return;
-    
+
     const zip = new JSZip();
     resultFiles.forEach(f => {
       zip.file(f.name, f.blob);
     });
-    
+
     const content = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(content);
     const link = document.createElement('a');
@@ -123,7 +125,7 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
 
   const uploadToGoogleDrive = async () => {
     if (!settings.driveClientId) return alert("Configuration error: Drive Client ID not found.");
-    
+
     try {
       setStatus('Requesting Google Drive access...');
       const token = await initDriveAuth(settings.driveClientId);
@@ -153,6 +155,7 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
         });
       }
       setStatus('Success! Drive updated.');
+      setIsUploaded(true);
     } catch (err: any) {
       console.error(err);
       setStatus(`Upload error: ${err.message}`);
@@ -215,19 +218,23 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
               <p className="text-slate-400">{resultFiles.length} invoices split.</p>
             </div>
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={downloadAsZip}
                 className="flex items-center gap-2 px-6 py-3 bg-white/10 rounded-lg font-bold hover:bg-white/20 transition-all border border-white/10"
               >
                 <Archive className="w-4 h-4" />
                 Download ZIP
               </button>
-              <button 
+              <button
                 onClick={uploadToGoogleDrive}
-                className="flex items-center gap-2 px-8 py-3 bg-[#f84827] rounded-lg font-bold hover:scale-105 transition-all shadow-lg shadow-[#f84827]/20"
+                disabled={isUploaded}
+                className={`flex items-center gap-2 px-8 py-3 rounded-lg font-bold transition-all shadow-lg ${isUploaded
+                    ? "bg-green-500 hover:bg-green-600 shadow-green-500/20 cursor-default"
+                    : "bg-[#f84827] hover:scale-105 shadow-[#f84827]/20"
+                  }`}
               >
-                <Cloud className="w-4 h-4" />
-                Upload to Drive
+                {isUploaded ? <Check className="w-4 h-4" /> : <Cloud className="w-4 h-4" />}
+                {isUploaded ? "Uploaded" : "Upload to Drive"}
               </button>
             </div>
           </div>
@@ -250,7 +257,7 @@ const SplitModule: React.FC<SplitModuleProps> = ({ settings }) => {
                     </td>
                     <td className="p-4 text-right text-slate-500">{(f.blob.size / 1024).toFixed(1)} KB</td>
                     <td className="p-4 text-center">
-                      <button 
+                      <button
                         onClick={() => {
                           const url = URL.createObjectURL(f.blob);
                           const link = document.createElement('a');

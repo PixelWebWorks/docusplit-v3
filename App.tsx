@@ -1,20 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
 import { Module, Settings } from './types';
 import Navigation from './components/Navigation';
-import SplitModule from './components/SplitModule';
-import ReconcileModule from './components/ReconcileModule';
-import { Layout, Loader2 } from 'lucide-react';
+import UnifiedModule from './components/UnifiedModule';
+import SearchModule from './components/SearchModule';
+import { Layout, Loader2, Info, LogOut, User } from 'lucide-react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Login from './components/Login';
 
-const App: React.FC = () => {
-  const [currentModule, setCurrentModule] = useState<Module>(Module.SPLIT);
+const AppContent: React.FC = () => {
+  const { user, loading, logout, branchId } = useAuth();
+  const [currentModule, setCurrentModule] = useState<Module>(Module.UNIFIED);
   const [isKeySelected, setIsKeySelected] = useState<boolean | null>(null);
   
-  // Settings injected from environment variables (Coolify)
-  const [settings] = useState<Settings>({
-    driveClientId: (process.env as any).DRIVE_CLIENT_ID || localStorage.getItem('driveClientId') || '',
-    driveFolderId: (process.env as any).DRIVE_FOLDER_ID || localStorage.getItem('driveFolderId') || '',
-  });
+  // Settings
+  const [settings] = useState<Settings>({});
 
   useEffect(() => {
     const checkApiKey = async () => {
@@ -41,56 +40,78 @@ const App: React.FC = () => {
   }, []);
 
   const handleReset = () => {
-    // Immediate full page reload to clear all states and memory
     window.location.href = window.location.pathname + window.location.search;
   };
 
-  if (isKeySelected === null) {
+  if (loading || isKeySelected === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#020b18]">
-        <Loader2 className="w-10 h-10 text-[#f84827] animate-spin" />
+        <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
       </div>
     );
   }
 
-  const renderModule = () => {
-    switch (currentModule) {
-      case Module.SPLIT:
-        return <SplitModule settings={settings} />;
-      case Module.RECONCILE:
-        return <ReconcileModule />;
-      default:
-        return <SplitModule settings={settings} />;
-    }
-  };
+  if (!user) {
+    return <Login />;
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
       <header className="p-4 glass sticky top-0 z-50 flex items-center justify-between border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-[#f84827] rounded-lg shadow-[0_0_15px_rgba(248,72,39,0.5)]">
+          <div className="p-2 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-lg shadow-[0_0_15px_rgba(59,130,246,0.5)]">
             <Layout className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-white hidden md:block">
-            BRADY <span className="text-[#f84827]">AUDIT</span>
-            <span className="ml-2 px-1.5 py-0.5 bg-white/10 rounded text-[10px] uppercase tracking-tighter border border-white/10">Pro</span>
-          </h1>
+          <div className="hidden md:block">
+            <h1 className="text-xl font-bold tracking-tight text-white leading-tight">
+              BRADY <span className="text-blue-500">AUDIT</span>
+            </h1>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded text-[9px] font-bold uppercase tracking-tighter border border-blue-500/20">v3 (Firebase)</span>
+              <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+                <User className="w-3 h-3" />
+                {branchId}
+              </div>
+            </div>
+          </div>
         </div>
-        <Navigation 
-          currentModule={currentModule} 
-          setModule={setCurrentModule} 
-          onReset={handleReset}
-        />
+        <div className="flex items-center gap-4">
+          <Navigation 
+            currentModule={currentModule} 
+            setModule={setCurrentModule} 
+            onReset={handleReset}
+          />
+          <button 
+            onClick={() => logout()}
+            className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
+            title="Logout"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 container mx-auto px-4 py-8 max-w-6xl">
-        {renderModule()}
+        {currentModule === Module.UNIFIED && <UnifiedModule settings={settings} />}
+        {currentModule === Module.SEARCH && <SearchModule />}
       </main>
 
-      <footer className="p-6 text-center text-slate-500 text-xs mt-auto border-t border-white/5">
-        <div>&copy; {new Date().getFullYear()} Brady Audit Suite. Automated Logistics Management.</div>
+      <footer className="p-6 text-center text-slate-500 text-xs mt-auto border-t border-white/5 space-y-2">
+        <div className="flex items-center justify-center gap-2 text-slate-400">
+           <Info className="w-4 h-4"/> 
+           Secure Enterprise Cloud Mode Active
+        </div>
+        <div>&copy; {new Date().getFullYear()} Brady Audit Suite. Automated Logistics Logistics.</div>
       </footer>
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

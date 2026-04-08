@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Module } from '../types';
-import { Scissors, FileSearch, RefreshCcw } from 'lucide-react';
+import { LayoutDashboard, RefreshCcw, Search } from 'lucide-react';
 
 interface NavigationProps {
   currentModule: Module;
@@ -11,8 +10,8 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ currentModule, setModule, onReset }) => {
   const tabs = [
-    { id: Module.SPLIT, label: 'Split & Upload', icon: Scissors },
-    { id: Module.RECONCILE, label: 'Reconcile', icon: FileSearch },
+    { id: Module.UNIFIED, label: 'Audit Dashboard', icon: LayoutDashboard },
+    { id: Module.SEARCH, label: 'Audit History', icon: Search },
   ];
 
   return (
@@ -25,9 +24,9 @@ const Navigation: React.FC<NavigationProps> = ({ currentModule, setModule, onRes
             <button
               key={tab.id}
               onClick={() => setModule(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 text-sm font-medium ${
+              className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 text-sm font-medium ${
                 isActive 
-                  ? 'bg-[#f84827] text-white shadow-lg' 
+                  ? 'bg-blue-600 text-white shadow-lg' 
                   : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
               }`}
             >
@@ -42,10 +41,10 @@ const Navigation: React.FC<NavigationProps> = ({ currentModule, setModule, onRes
 
       <button
         onClick={onReset}
-        className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#f84827]/30 text-[#f84827] hover:bg-[#f84827] hover:text-white transition-all duration-300 text-sm font-bold shadow-lg shadow-[#f84827]/5 group"
+        className="flex items-center gap-2 px-4 py-2 rounded-full border border-blue-500/30 text-blue-400 hover:bg-blue-600 hover:text-white transition-all duration-300 text-sm font-bold shadow-lg shadow-blue-500/5 group"
       >
         <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-        <span className="hidden md:inline">Start New Process</span>
+        <span className="hidden md:inline">Restart Process</span>
       </button>
     </nav>
   );

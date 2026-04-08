@@ -1,13 +1,12 @@
-
 export enum Module {
-  SPLIT = 'SPLIT',
-  RECONCILE = 'RECONCILE',
+  UNIFIED = 'UNIFIED', // Replaced SPLIT and RECONCILE
+  SEARCH = 'SEARCH',
   SETTINGS = 'SETTINGS'
 }
 
 export interface Settings {
-  driveClientId: string;
-  driveFolderId: string;
+  driveClientId?: string; // Legacy, kept for reference if needed
+  driveFolderId?: string; // Legacy
 }
 
 export interface InvoiceMetadata {
@@ -17,11 +16,19 @@ export interface InvoiceMetadata {
 
 export interface Discrepancy {
   id: string;
-  type: 'MISSING_IN_EXCEL' | 'MISSING_IN_PDF';
+  inPdf: boolean;
+  inExcel: boolean;
 }
 
 export interface AppState {
   currentModule: Module;
   settings: Settings;
   isProcessing: boolean;
+}
+
+export interface ResultFile {
+  name: string;
+  blob: Blob;
+  shipTo: string;
+  invoiceNo: string;
 }

@@ -8,9 +8,15 @@ export const uploadInvoiceToFirebase = async (
   branchId: string = "default_branch"
 ) => {
   try {
-    const sanitize = (text: string) => text.replace(/[^a-z0-9]/gi, '_').substring(0, 50);
-    const safeShipTo = sanitize(file.shipTo || 'Unknown_Client');
-    const safeInvoiceNo = sanitize(file.invoiceNo || 'Unknown_Invoice');
+    const sanitize = (text: string) => text.replace(/[^a-z0-9\s_\-]/gi, '').trim();
+    
+    // Limpiamos el número de factura para quedarnos solo con la parte final
+    const rawInvoice = file.invoiceNo || 'Unknown_Invoice';
+    const invoiceParts = rawInvoice.split(/[_\-\s]+/);
+    const cleanInvoiceNo = invoiceParts[invoiceParts.length - 1] || rawInvoice;
+    
+    const safeShipTo = sanitize(file.shipTo || 'Unknown_Client').replace(/\s+/g, '_');
+    const safeInvoiceNo = sanitize(cleanInvoiceNo).replace(/\s+/g, '_');
     
     // 1. Upload to Storage in folder structure: Branch / ShipTo / Invoice.pdf
     const storagePath = `invoices/${branchId}/${safeShipTo}/${safeInvoiceNo}.pdf`;

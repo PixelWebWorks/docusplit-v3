@@ -72,7 +72,11 @@ async function migrate() {
       console.log(`[${i + 1}/${pdfList.length}] Subiendo: ${fileInfo.shipTo} -> ${fileInfo.fileName}...`);
       
       const fileBuffer = fs.readFileSync(fileInfo.path);
-      const invoiceNo = fileInfo.fileName.replace('.pdf', '');
+      const fileNameNoExt = fileInfo.fileName.replace('.pdf', '');
+      // Intentamos separar por guion bajo, guion medio o espacio y tomamos la última parte
+      const nameParts = fileNameNoExt.split(/[_\-\s]+/);
+      const invoiceNo = nameParts[nameParts.length - 1] || fileNameNoExt;
+      
       const shipTo = fileInfo.shipTo;
       const branchId = 'Sucursal_Houston';
 

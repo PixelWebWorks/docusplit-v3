@@ -8,9 +8,11 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
 
 const AppContent: React.FC = () => {
-  const { user, loading, logout, branchId } = useAuth();
+  const { user, loading, logout, branchId, role } = useAuth();
   const [currentModule, setCurrentModule] = useState<Module>(Module.UNIFIED);
   const [isKeySelected, setIsKeySelected] = useState<boolean | null>(null);
+
+  const isAdmin = role === 'admin';
   
   // Settings
   const [settings] = useState<Settings>({});
@@ -68,7 +70,10 @@ const AppContent: React.FC = () => {
             </h1>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded text-[9px] font-bold uppercase tracking-tighter border border-blue-500/20">v3 (Firebase)</span>
-              <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+              {isAdmin && (
+                <span className="px-1.5 py-0.5 bg-orange-500 text-white rounded text-[9px] font-black uppercase tracking-widest animate-pulse shadow-lg shadow-orange-500/20">ADMIN</span>
+              )}
+              <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium ml-1">
                 <User className="w-3 h-3" />
                 {branchId}
               </div>

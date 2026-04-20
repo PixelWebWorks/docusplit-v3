@@ -13,12 +13,15 @@ interface InvoiceRecord {
 }
 
 const SearchModule: React.FC = () => {
-  const { branchId } = useAuth();
+  const { branchId, role } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [isGlobalSearch, setIsGlobalSearch] = useState(false);
   const [results, setResults] = useState<InvoiceRecord[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState('');
+
+  const isAdmin = role === 'admin';
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,13 +36,14 @@ const SearchModule: React.FC = () => {
       // Create a query against the collection.
       const invoicesRef = collection(db, "invoices");
       
-      // Right now we search exactly by invoiceNo. 
-      // In a real app we might want to normalize the search term or do text search.
-      const q = query(
-        invoicesRef, 
-        where("branchId", "==", branchId),
-        where("invoiceNo", "==", searchTerm.trim())
-      );
+      // If global search is ON and user is admin, we don't filter by branchId
+      const constraints = [];
+      if (!isGlobalSearch || !isAdmin) {
+        constraints.push(where("branchId", "==", branchId));
+      }
+      constraints.push(where("invoiceNo", "==", searchTerm.trim()));
+
+      const q = query(invoicesRef, ...constraints);
 
       const querySnapshot = await getDocs(q);
       const foundInvoices: InvoiceRecord[] = [];
@@ -73,13 +77,13 @@ const SearchModule: React.FC = () => {
     
     try {
       const invoicesRef = collection(db, "invoices");
-      // Getting latest 10 uploads
-      const q = query(
-        invoicesRef, 
-        where("branchId", "==", branchId),
-        orderBy("updatedAt", "desc"), 
-        limit(10)
-      );
+      const constraints = [orderBy("updatedAt", "desc"), limit(10)];
+      
+      if (!isGlobalSearch || !isAdmin) {
+        constraints.unshift(where("branchId", "==", branchId));
+      }
+
+      const q = query(invoicesRef, ...constraints);
       const querySnapshot = await getDocs(q);
       
       const recentInvoices: InvoiceRecord[] = [];
@@ -148,6 +152,20 @@ const SearchModule: React.FC = () => {
             <Filter className="w-4 h-4" />
             Show 10 Latest Uploads
           </button>
+
+          {isAdmin && (
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <span className={`font-bold transition-colors ${isGlobalSearch ? 'text-orange-500' : 'text-slate-500'}`}>
+                GLOBAL SEARCH
+              </span>
+              <div 
+                onClick={() => setIsGlobalSearch(!isGlobalSearch)}
+                className={`w-12 h-6 rounded-full p-1 transition-colors relative ${isGlobalSearch ? 'bg-orange-600' : 'bg-slate-700'}`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${isGlobalSearch ? 'translate-x-6' : 'translate-x-0'}`} />
+              </div>
+            </label>
+          )}
         </div>
       </section>
 
@@ -177,6 +195,7 @@ const SearchModule: React.FC = () => {
                   <tr>
                     <th className="p-4 text-slate-300">Invoice / Ticket ID</th>
                     <th className="p-4 text-slate-300">Target Store (ShipTo)</th>
+                    {isAdmin && isGlobalSearch && <th className="p-4 text-slate-300">Branch</th>}
                     <th className="p-4 text-slate-300 text-center">Processing Date</th>
                     <th className="p-4 text-slate-300 text-right">Action</th>
                   </tr>
@@ -191,6 +210,13 @@ const SearchModule: React.FC = () => {
                           {r.shipTo}
                         </div>
                       </td>
+                      {isAdmin && isGlobalSearch && (
+                        <td className="p-4">
+                          <span className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] text-slate-400 font-mono">
+                            {r.branchId}
+                          </span>
+                        </td>
+                      )}
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-2 text-slate-400">
                           <Calendar className="w-4 h-4" />

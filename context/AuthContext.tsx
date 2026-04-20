@@ -12,6 +12,7 @@ interface AuthContextType {
   user: FirebaseUser | null;
   loading: boolean;
   branchId: string;
+  role: string;
   login: (email: string, pass: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -22,6 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [branchId, setBranchId] = useState('Pending_Assignment');
+  const [role, setRole] = useState('user');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -31,10 +33,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userDocRef = doc(db, 'users', u.email.toLowerCase());
           const userDoc = await getDoc(userDocRef);
           
-          if (userDoc.exists() && userDoc.data().branchId) {
-            setBranchId(userDoc.data().branchId);
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            if (data.branchId) setBranchId(data.branchId);
+            if (data.role) setRole(data.role);
           } else {
             setBranchId('Unassigned');
+            setRole('user');
           }
         } catch (e) {
           console.error("Error fetching branch assignment", e);
@@ -55,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, branchId, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, branchId, role, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

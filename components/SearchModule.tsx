@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Loader2, Database, AlertCircle, Calendar, Store, Filter } from 'lucide-react';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit, QueryConstraint } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useAuth } from '../context/AuthContext';
 
@@ -37,7 +37,7 @@ const SearchModule: React.FC = () => {
       const invoicesRef = collection(db, "invoices");
       
       // If global search is ON and user is admin, we don't filter by branchId
-      const constraints = [];
+      const constraints: QueryConstraint[] = [];
       if (!isGlobalSearch || !isAdmin) {
         constraints.push(where("branchId", "==", branchId));
       }
@@ -77,7 +77,7 @@ const SearchModule: React.FC = () => {
     
     try {
       const invoicesRef = collection(db, "invoices");
-      const constraints = [orderBy("updatedAt", "desc"), limit(10)];
+      const constraints: QueryConstraint[] = [orderBy("updatedAt", "desc"), limit(10)];
       
       if (!isGlobalSearch || !isAdmin) {
         constraints.unshift(where("branchId", "==", branchId));
